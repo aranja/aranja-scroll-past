@@ -1,0 +1,18 @@
+{
+  "name": "scroll-past",
+  "main": "index.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/aranja/aranja-scroll-past",
+  "authors": [
+    "Aranja"
+  ],
+  "description": "Hide and show fixed elements when scrolling.",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
