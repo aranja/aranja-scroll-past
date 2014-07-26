@@ -6,17 +6,29 @@
   <title>Araja - Component/full-height</title>
   <style>
     body {
-      padding: 50px 15px 0;
+      padding: 100px 15px 0;
     }
 
     header {
-      background: red;
+      background: lightblue;
       font: 300 24px / 50px sans-serif;
       left: 0;
       padding: 0 15px;
       position: fixed;
       right: 0;
       top: 0;
+      z-index: 100;
+    }
+
+    .subheader {
+      background: red;
+      font: 300 24px / 50px sans-serif;
+      left: 0;
+      padding: 0 15px;
+      position: fixed;
+      right: 0;
+      top: 50px;
+      z-index: 99;
     }
 
     .container {
@@ -26,9 +38,14 @@
   </style>
 </head>
 <body>
-<header data-scroll-past>
+<header>
   <div class="container">
     Header!
+  </div>
+</header>
+<header class="subheader" data-scroll-past>
+  <div class="container">
+    Subheader!
   </div>
 </header>
 

@@ -1,6 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require('./lib');
+
+},{"./lib":2}],2:[function(require,module,exports){
 'use strict';
 var $ = require('jquery');
+var transition = require('./transition');
 
 /**
  * Hide and show fixed elements when scrolling.
@@ -14,8 +18,11 @@ function ScrollPast(el, options) {
 
   this.timer = null;
   this.isScrolling = false;
+
+  // Prebind callback handlers.
   this.onScroll = this.onScroll.bind(this);
   this._endScroll = this._endScroll.bind(this);
+  this._finishedTransition = this._finishedTransition.bind(this);
 
   this.elPosition = 0;
   this.elHeight = this.el.height();
@@ -23,9 +30,12 @@ function ScrollPast(el, options) {
 
   options = $.extend({}, ScrollPast.DEFAULTS, options, this.el.data());
   this.appearOffset = parseInt(options.appearOffset, 10);
+  this.direction = this._findDirection(options.edge);
   this.multiplier = parseFloat(options.multiplier);
   this.scrollTimeout = parseInt(options.scrollTimeout, 10);
-  this._findViewport(options.viewport);
+  this.transitionDuration = parseInt(options.transitionDuration, 10);
+  this.transitionEasing = options.transitionEasing;
+  this.viewportEl = this._findViewport(options.viewport);
   this.init();
 }
 
@@ -34,33 +44,44 @@ function ScrollPast(el, options) {
  * @type {Object}
  */
 ScrollPast.DEFAULTS = {
-  multiplier: 1,
   appearOffset: 0,
-  scrollTimeout: 300,
+  edge: 'auto',
+  multiplier: 1,
+  scrollTimeout: 500,
+  transitionDuration: 300,
+  transitionEasing: 'ease',
   viewport: 'closest'
 };
 
 ScrollPast.prototype._findViewport = function(viewportSel) {
   if (viewportSel === 'window') {
-    this.viewportEl = $(window);
+    return $(window);
   } else if (viewportSel === 'closest') {
     var parents = this.el.parents();
     for (var i = 0, el; (el = parents.eq(i)).length; i++) {
       var overflow = el.css('overflow'),
-          overflowY = el.css('overflow-y');
+        overflowY = el.css('overflow-y');
 
       if (overflow === 'scroll' || overflow === 'auto' ||
-          overflowY === 'scroll' || overflowY === 'auto') {
-        this.viewportEl = el;
-        break;
+        overflowY === 'scroll' || overflowY === 'auto') {
+        return el;
       }
     }
-
-    if (!this.viewportEl) {
-      this.viewportEl = $(window);
-    }
+    return $(window);
   } else {
-    this.viewportEl = $(viewportSel);
+    return $(viewportSel);
+  }
+};
+
+ScrollPast.prototype._findDirection = function(edge) {
+  if (edge === 'top') {
+    return -1;
+  } else if (edge === 'bottom') {
+    return 1;
+  } else if (this.el.css('bottom') !== 'auto') {
+    return 1;
+  } else {
+    return -1;
   }
 };
 
@@ -90,20 +111,53 @@ ScrollPast.prototype._endScroll = function() {
   } else {
     this.elPosition = this.elHeight;
   }
-  this.el.css('transform', 'translate3d(0, ' + (-this.elPosition) + 'px, 0)');
+
+  this.isAnimating = true;
+  this._updateAppearance();
+  transition(this.el[0], this.transitionDuration, this.transitionEasing, this._finishedTransition);
+};
+
+ScrollPast.prototype._finishedTransition = function() {
+  this.isAnimating = false;
+};
+
+ScrollPast.prototype._updateAppearance = function() {
+  // Validate that we're visible at top of page.
+  var scrollPosition = this.viewportEl.scrollTop();
+  if (scrollPosition < this.elPosition / this.multiplier) {
+    this.elPosition = Math.max(0, scrollPosition) * this.multiplier;
+  }
+
+  this.el.css('transform', 'translate3d(0, ' + (this.direction * this.elPosition) + 'px, 0)');
 };
 
 /**
  * Scroll Event Handler
  */
 ScrollPast.prototype.onScroll = function() {
+  if (!this.isScrolling && this.isAnimating) {
+    return;
+  }
+
   if (!this.isScrolling) {
     this._beginScroll();
   } else {
     var scrollPosition = this.viewportEl.scrollTop();
     var scrollDelta = scrollPosition - this.scrollStart;
-    this.elPosition = Math.max(0, Math.min(this.elHeight, this.elStart + scrollDelta * this.multiplier));
-    this.el.css('transform', 'translate3d(0, ' + (-this.elPosition) + 'px, 0)');
+
+    this.elPosition = this.elStart + scrollDelta * this.multiplier;
+    if (this.elPosition < 0) {
+      this.elPosition = 0;
+      this.elStart = 0;
+      this.scrollStart = scrollPosition;
+    }
+    if (this.elPosition > this.elHeight + this.appearOffset) {
+      this.elPosition = this.elHeight;
+      this.elStart = this.elPosition + this.appearOffset;
+      this.scrollStart = scrollPosition;
+    }
+    this._updateAppearance();
+    this.el.css('transform', 'translate3d(0, ' + (this.direction * this.elPosition) + 'px, 0)');
   }
 
   if (this.timer) {
@@ -131,7 +185,67 @@ $(function() {
   $('[data-scroll-past]').scrollPast();
 });
 
-},{"jquery":2}],2:[function(require,module,exports){
+},{"./transition":3,"jquery":4}],3:[function(require,module,exports){
+// Test div
+var div = document.createElement('div');
+
+
+/**
+ * Helper function to get the proper vendor property name.
+ * (`transition` => `WebkitTransition`)
+ */
+function getVendorPropertyName(prop) {
+  // Handle unprefixed versions (FF16+, for example)
+  if (prop in div.style) return prop;
+
+  var prefixes = ['Moz', 'Webkit', 'O', 'ms'];
+  var propCapped = prop.charAt(0).toUpperCase() + prop.substr(1);
+
+  for (var i = 0; i < prefixes.length; i++) {
+    var vendorProp = prefixes[i] + propCapped;
+    if (vendorProp in div.style) { return vendorProp; }
+  }
+}
+
+// Prepare vendor prefixed property names.
+var transitionProp = getVendorPropertyName('transition');
+var transformProp = getVendorPropertyName('transform');
+
+/**
+ *
+ */
+function getTransition(duration, easing) {
+  return transformProp + ' ' + duration + 'ms ' + easing;
+}
+
+/**
+ * A super simple transition helper for transitioning the transform property.
+ * Handles browser prefixes for transition and transform property names.
+ * Uses a setTimeout for the cb.
+ * @param {Element} el DOM element to transition
+ * @param {number} duration of transition in milliseconds
+ * @param {string} easing any valid CSS easing
+ * @param {function} callback when transition is done
+ */
+module.exports = function doTransition(el, duration, easing, callback) {
+  // Backup any existing transition.
+  var oldValue = el.style[transitionProp];
+
+  // Apply the transition.
+  el.style[transitionProp] = getTransition(duration, easing);
+
+  // Wait until the transition finishes.
+  // transitionend is unreliable (reference?), setTimeout is easier.
+  setTimeout(function() {
+    // Reset the old value.
+    el.style[transitionProp] = oldValue;
+
+    // Call the callback.
+    callback();
+  }, duration);
+};
+
+},{}],4:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v1.11.1
  * http://jquery.com/
