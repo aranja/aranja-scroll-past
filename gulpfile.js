@@ -15,7 +15,8 @@ gulp.task('build', function() {
   }
 
   return browserify({
-    entries: ['./index.js']
+    entries: ['./index.js'],
+    debug: process.env.DEV
   })
     .bundle()
     .on('error', handleErrors)
