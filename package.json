@@ -1,6 +1,6 @@
 {
   "name": "aranja-scroll-past",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Hide and show fixed elements when scrolling.",
   "main": "index.js",
   "repository": {
