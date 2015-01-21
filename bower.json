@@ -1,8 +1,8 @@
 {
-  "name": "scroll-past",
+  "name": "tux-autohide",
   "main": "index.js",
   "version": "0.4.1",
-  "homepage": "https://github.com/aranja/aranja-scroll-past",
+  "homepage": "https://github.com/aranja/tux-autohide",
   "authors": [
     "Aranja"
   ],

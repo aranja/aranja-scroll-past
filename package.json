@@ -1,16 +1,16 @@
 {
-  "name": "aranja-scroll-past",
+  "name": "tux-autohide",
   "version": "0.4.1",
   "description": "Hide and show fixed elements when scrolling.",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "http://github.com/aranja/aranja-scroll-past.git"
+    "url": "http://github.com/aranja/tux-autohide.git"
   },
   "bugs": {
-    "url": "https://github.com/aranja/aranja-scroll-past/issues"
+    "url": "https://github.com/aranja/tux-autohide/issues"
   },
-  "homepage": "https://github.com/aranja/aranja-scroll-past",
+  "homepage": "https://github.com/aranja/tux-autohide",
   "keywords": [],
   "license": "MIT",
   "devDependencies": {

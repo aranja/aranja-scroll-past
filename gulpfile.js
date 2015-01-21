@@ -20,7 +20,7 @@ gulp.task('build', function() {
   })
     .bundle()
     .on('error', handleErrors)
-    .pipe(source('scroll-past.js'))
+    .pipe(source('auto-hide.js'))
     .pipe(gulp.dest('dist'))
     .pipe(connect.reload());
 });
