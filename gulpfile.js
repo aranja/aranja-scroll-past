@@ -20,7 +20,7 @@ gulp.task('build', function() {
   })
     .bundle()
     .on('error', handleErrors)
-    .pipe(source('auto-hide.js'))
+    .pipe(source('tux-autohide.js'))
     .pipe(gulp.dest('dist'))
     .pipe(connect.reload());
 });
