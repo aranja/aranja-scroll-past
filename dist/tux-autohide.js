@@ -51,6 +51,7 @@ function AutoHide(el, options) {
   this.direction = this._findDirection(options.edge);
   this.multiplier = parseFloat(options.multiplier);
   this.scrollTimeout = parseInt(options.scrollTimeout, 10);
+  this.scrollOffsetThreshold = options.scrollOffsetThreshold;
   this.transitionDuration = parseInt(options.transitionDuration, 10);
   this.transitionEasing = options.transitionEasing;
   this.viewportEl = this._findViewport(options.viewport);
@@ -82,6 +83,7 @@ AutoHide.DEFAULTS = {
   edge: 'auto',
   multiplier: 1,
   scrollTimeout: 500,
+  scrollOffsetThreshold: 0,
   transitionDuration: 300,
   transitionEasing: 'ease',
   viewport: 'closest'
@@ -166,10 +168,10 @@ AutoHide.prototype._visibilityFromScroll = function(scrollPosition) {
 
 /**
  * Calculates a new range of visibility and offset for scrolling inside based on a
- * specified scroll position. 
+ * specified scroll position.
  * If `isPastOffset` is false, the new range will be fully visible based on the
  * scroll position, otherwise it will be fully hidden with offset.
- * on 
+ * on
  * @private
  */
 AutoHide.prototype._resetScrollRange = function(scrollPosition, isPastOffset) {
@@ -248,6 +250,11 @@ AutoHide.prototype._onScroll = function() {
 
   // Get scroll position.
   var scrollPosition = Math.max(0, Math.min(this.maxScroll, this.viewportEl.scrollTop()));
+
+  // Only proceed if past certain scroll threshold
+  if (this.scrollOffsetThreshold >= this.elHeight && scrollPosition <= this.scrollOffsetThreshold) {
+    return;
+  }
 
   // Calculate visibility
   var oldVisibility = this.visibility;
@@ -395,7 +402,7 @@ function dasherize(str) {
 
 },{}],5:[function(require,module,exports){
 /*!
- * jQuery JavaScript Library v2.1.3
+ * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -405,7 +412,7 @@ function dasherize(str) {
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-12-18T15:11Z
+ * Date: 2015-04-28T16:01Z
  */
 
 (function( global, factory ) {
@@ -463,7 +470,7 @@ var
 	// Use the correct document accordingly with window argument (sandbox)
 	document = window.document,
 
-	version = "2.1.3",
+	version = "2.1.4",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -927,7 +934,12 @@ jQuery.each("Boolean Number String Function Array Date RegExp Object Error".spli
 });
 
 function isArraylike( obj ) {
-	var length = obj.length,
+
+	// Support: iOS 8.2 (not reproducible in simulator)
+	// `in` check used to prevent JIT error (gh-2145)
+	// hasOwn isn't used here due to false negatives
+	// regarding Nodelist length in IE
+	var length = "length" in obj && obj.length,
 		type = jQuery.type( obj );
 
 	if ( type === "function" || jQuery.isWindow( obj ) ) {
