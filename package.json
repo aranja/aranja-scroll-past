@@ -1,6 +1,6 @@
 {
   "name": "tux-autohide",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Hide and show fixed elements when scrolling.",
   "main": "index.js",
   "repository": {
